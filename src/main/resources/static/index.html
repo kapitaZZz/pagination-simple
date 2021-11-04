@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <title>Pagination Example</title>
+</head>
+<style>
+    table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    td, th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #dddddd;
+    }
+</style>
+
+<body>
+<h2>HTML Table</h2>
+
+<table id="users_table_id">
+
+</table>
+
+<button onclick="getUsers()">Get Users</button>
+<input id="page_size_id" type="number" value="10" placeholder="Enter page size">
+
+<div id="pageable_div_id"></div>
+
+<script>
+
+    var pageNumber = 0;
+    var defaultSortingField = 'id';
+    var defaultSortingDirection = 'ASC';
+    var previousPage, nextPage, currentPage;
+    var sortingDirectionField = 'DESC';
+    var sortingField = 'id';
+
+    function displayPageable(pageable, totalElements, totalPages) {
+        previousPage = pageable.pageNumber - 1;
+        if (previousPage < 0) {
+            previousPage = 0;
+        }
+        nextPage = pageable.pageNumber + 1;
+        if (nextPage > totalPages) {
+            nextPage = totalPages;
+        }
+        var html = '<button onclick="getUsers(\'' + previousPage + '\', \''
+            + defaultSortingField + '\', \''
+            + defaultSortingDirection + '\')">Previous</button>' +
+            '<button onclick="getUsers(\'' + nextPage + '\', \''
+            + defaultSortingField + '\', \''
+            + defaultSortingDirection + '\')">Next</button>' +
+            '<br><span>' + pageable.offset + ' of ' + totalElements + ' elements</span>';
+
+        document.getElementById("pageable_div_id").innerHTML = html;
+    }
+
+    function sort(field) {
+        if (sortingDirectionField === 'ASC') {
+            sortingDirectionField = 'DESC';
+        } else {
+            sortingDirectionField = 'ASC';
+        }
+
+        getUsers(currentPage, field, sortingDirectionField);
+    }
+
+    function getUsers(page, sortingField, sortingDirection) {
+        var pageSize = document.getElementById("page_size_id").value;
+        if (page == null) {
+            page = pageNumber;
+        }
+
+        if (sortingField == null) {
+            sortingField = defaultSortingField;
+        }
+
+        if (sortingDirection == null) {
+            sortingDirection = defaultSortingDirection;
+        }
+
+        $.get("http://localhost:8080/getUsers?page=" + page + "&size=" + pageSize + "&sortingField="
+            + sortingField + "&sortingDirection="
+            + sortingDirection, function (data, status) {
+            console.log(data);
+            var html = '<tr>\n' +
+                '        <th onclick="sort(\'' + 'id' + '\')">Id</th>\n' +
+                '        <th onclick="sort(\'' + 'login' + '\')">Login</th>\n' +
+                '        <th onclick="sort(\'' + 'age' + '\')">Age</th>\n' +
+                '        <th onclick="sort(\'' + 'email' + '\')">Email</th>\n' +
+                '    </tr>';
+
+            for (var i = 0; i < data.content.length; i++) {
+                html = html + '<tr>\n' +
+                    '        <td>' + data.content[i].id + '</td>\n' +
+                    '        <td>' + data.content[i].login + '</td>\n' +
+                    '        <td>' + data.content[i].age + '</td>\n' +
+                    '        <td>' + data.content[i].email + '</td>\n' +
+                    '    </tr>'
+            }
+            document.getElementById("users_table_id").innerHTML = html;
+            displayPageable(data.pageable, data.totalElements, data.totalPages);
+            currentPage = data.number;
+        });
+    }
+
+</script>
+
+</body>
+</html>
